@@ -1,0 +1,1422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Job Search Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Instrument+Sans:wght@300;400;500;600&family=Instrument+Mono&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:    #0F2440;
+  --blue:    #1A4A8A;
+  --accent:  #F0A500;
+  --green:   #0E6E45;
+  --red:     #A82828;
+  --purple:  #4A2A7A;
+  --teal:    #0A6E6E;
+  --bg:      #F2F4F8;
+  --card:    #FFFFFF;
+  --border:  #DDE3EE;
+  --text:    #0F1929;
+  --muted:   #5A6A8A;
+  --sidebar: #0F2440;
+  --display: 'Syne', sans-serif;
+  --body:    'Instrument Sans', sans-serif;
+  --mono:    'Instrument Mono', monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--body);background:var(--bg);color:var(--text);min-height:100vh;display:flex;}
+
+/* ── SIDEBAR ── */
+.sidebar{
+  width:220px;flex-shrink:0;background:var(--sidebar);
+  display:flex;flex-direction:column;position:fixed;
+  top:0;left:0;bottom:0;z-index:50;
+}
+.sidebar-brand{
+  padding:24px 20px 20px;
+  border-bottom:1px solid rgba(255,255,255,0.08);
+}
+.sidebar-brand h1{
+  font-family:var(--display);font-size:14px;font-weight:800;
+  color:#fff;letter-spacing:0.5px;line-height:1.3;
+  text-transform:uppercase;
+}
+.sidebar-brand .user-pill{
+  display:flex;align-items:center;gap:8px;margin-top:14px;cursor:pointer;
+  padding:8px 10px;border-radius:8px;
+  background:rgba(255,255,255,0.06);
+  transition:background 0.15s;
+}
+.sidebar-brand .user-pill:hover{background:rgba(255,255,255,0.12);}
+.user-avatar{
+  width:28px;height:28px;border-radius:50%;
+  background:var(--accent);display:flex;align-items:center;
+  justify-content:center;font-family:var(--display);font-weight:700;
+  font-size:12px;color:var(--navy);flex-shrink:0;
+}
+.user-name{font-size:12px;color:rgba(255,255,255,0.85);font-weight:500;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.user-edit-hint{font-size:10px;color:rgba(255,255,255,0.35);}
+
+.nav{flex:1;padding:16px 10px;}
+.nav-section-label{
+  font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;
+  color:rgba(255,255,255,0.3);padding:8px 10px 4px;
+}
+.nav-item{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 12px;border-radius:8px;cursor:pointer;
+  color:rgba(255,255,255,0.55);font-size:13px;font-weight:500;
+  transition:all 0.15s;margin-bottom:2px;
+}
+.nav-item:hover{background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.9);}
+.nav-item.active{background:rgba(255,255,255,0.12);color:#fff;}
+.nav-item svg{flex-shrink:0;opacity:0.7;}
+.nav-item.active svg{opacity:1;}
+
+.sidebar-footer{
+  padding:16px 20px;border-top:1px solid rgba(255,255,255,0.08);
+  font-size:11px;color:rgba(255,255,255,0.25);text-align:center;
+}
+
+/* ── MAIN ── */
+.main{margin-left:220px;flex:1;min-height:100vh;display:flex;flex-direction:column;}
+.topbar{
+  background:var(--card);border-bottom:1px solid var(--border);
+  padding:0 32px;height:56px;display:flex;align-items:center;
+  justify-content:space-between;position:sticky;top:0;z-index:40;
+}
+.topbar-title{font-family:var(--display);font-size:16px;font-weight:700;color:var(--navy);}
+.topbar-actions{display:flex;gap:10px;align-items:center;}
+
+.page{display:none;padding:28px 32px;flex:1;}
+.page.active{display:block;}
+
+/* ── BUTTONS ── */
+.btn{
+  font-family:var(--body);font-size:13px;font-weight:500;
+  padding:8px 16px;border-radius:8px;border:none;cursor:pointer;
+  display:inline-flex;align-items:center;gap:6px;
+  transition:all 0.15s;white-space:nowrap;
+}
+.btn-primary{background:var(--navy);color:#fff;}
+.btn-primary:hover{background:var(--blue);}
+.btn-accent{background:var(--accent);color:var(--navy);font-weight:600;}
+.btn-accent:hover{background:#d99000;}
+.btn-outline{background:transparent;color:var(--navy);border:1px solid var(--border);}
+.btn-outline:hover{border-color:var(--navy);background:var(--bg);}
+.btn-ghost{background:transparent;color:var(--muted);border:none;}
+.btn-ghost:hover{color:var(--navy);background:var(--bg);}
+.btn-sm{padding:5px 10px;font-size:12px;}
+.btn-danger{background:#FEE;color:var(--red);border:1px solid #FCC;}
+.btn-danger:hover{background:#FDD;}
+.btn-green{background:#E8F5EE;color:var(--green);border:1px solid #C8E8D8;}
+
+/* ── KPI STRIP ── */
+.kpi-strip{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:24px;}
+.kpi{
+  background:var(--card);border:1px solid var(--border);border-radius:12px;
+  padding:16px;position:relative;overflow:hidden;
+  transition:transform 0.15s,box-shadow 0.15s;
+}
+.kpi:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,0.08);}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--kc,var(--blue));}
+.kpi-num{font-family:var(--mono);font-size:26px;color:var(--kc,var(--blue));line-height:1;margin-bottom:4px;}
+.kpi-label{font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;}
+
+/* ── TOOLBAR ── */
+.toolbar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
+.search-wrap{
+  display:flex;align-items:center;gap:8px;
+  background:var(--card);border:1px solid var(--border);
+  border-radius:8px;padding:0 12px;min-width:220px;
+}
+.search-wrap input{
+  border:none;outline:none;font-family:var(--body);font-size:13px;
+  padding:8px 0;color:var(--text);background:transparent;width:180px;
+}
+.fsel{
+  font-family:var(--body);font-size:13px;padding:8px 30px 8px 11px;
+  border:1px solid var(--border);border-radius:8px;background:var(--card);
+  color:var(--text);cursor:pointer;outline:none;appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235A6A8A'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 10px center;
+}
+
+/* ── TABLE ── */
+.tbl-wrap{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+table{width:100%;border-collapse:collapse;}
+thead{background:#F8FAFC;}
+th{
+  text-align:left;font-size:11px;font-weight:700;color:var(--muted);
+  text-transform:uppercase;letter-spacing:0.6px;padding:11px 14px;
+  border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;
+}
+th:hover{color:var(--navy);}
+td{
+  padding:11px 14px;font-size:13px;
+  border-bottom:1px solid #F0F3F8;vertical-align:middle;
+}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:#FAFBFE;cursor:pointer;}
+.c-co{font-weight:600;color:var(--navy);}
+.c-dt{font-family:var(--mono);font-size:11px;color:var(--muted);}
+.c-nt{max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--muted);font-size:12px;}
+
+/* ── BADGES ── */
+.badge{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:600;white-space:nowrap;}
+.b-saved    {background:#F0F3F8;color:#3A4A6A;}
+.b-applied  {background:#E5EEFF;color:var(--blue);}
+.b-interview{background:#FFF3DB;color:#9A6000;}
+.b-offer    {background:#E5F7EE;color:var(--green);}
+.b-rejected {background:#FEECEC;color:var(--red);}
+.b-ghosted  {background:#F3EEFF;color:var(--purple);}
+.rtag{font-family:var(--mono);font-size:10px;font-weight:500;padding:2px 6px;border-radius:3px;white-space:nowrap;}
+.rtag-em {background:#E5EEFF;color:var(--blue);}
+.rtag-tpm{background:#FFF3DB;color:#9A6000;}
+.rtag-cu {background:#F0F3F8;color:var(--muted);}
+.li-chip{font-size:11px;padding:2px 7px;border-radius:4px;font-weight:500;}
+.li-none{background:#F0F3F8;color:var(--muted);}
+.li-sent{background:#E5EEFF;color:var(--blue);}
+.li-rep {background:#E5F7EE;color:var(--green);}
+.sal-chip{font-family:var(--mono);font-size:11px;color:var(--green);background:#E5F7EE;padding:2px 7px;border-radius:4px;font-weight:500;}
+
+/* ── EMPTY STATE ── */
+.empty{text-align:center;padding:64px 32px;color:var(--muted);}
+.empty h3{font-family:var(--display);font-size:18px;color:var(--text);margin-bottom:8px;}
+.empty p{font-size:14px;margin-bottom:20px;}
+
+/* ── MODAL ── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:center;justify-content:center;}
+.overlay.open{display:flex;}
+.modal{
+  background:var(--card);border-radius:16px;
+  width:700px;max-width:95vw;max-height:92vh;overflow-y:auto;
+  box-shadow:0 24px 80px rgba(0,0,0,0.25);
+}
+.modal.modal-lg{width:820px;}
+.modal.modal-sm{width:440px;}
+.mhd{
+  padding:20px 24px 16px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--card);z-index:2;
+}
+.mhd h2{font-family:var(--display);font-size:17px;font-weight:700;}
+.mclose{background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);padding:2px 6px;border-radius:4px;}
+.mclose:hover{color:var(--text);background:var(--bg);}
+.mbody{padding:20px 24px;}
+.mfooter{padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px;position:sticky;bottom:0;background:var(--card);}
+
+/* ── FORM ── */
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.fg{display:flex;flex-direction:column;gap:5px;}
+.fg.full{grid-column:1/-1;}
+.fg label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;}
+.fi{
+  font-family:var(--body);font-size:13px;padding:9px 12px;
+  border:1px solid var(--border);border-radius:8px;color:var(--text);
+  background:var(--card);outline:none;transition:border-color 0.15s;width:100%;
+}
+.fi:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(26,74,138,0.08);}
+textarea.fi{resize:vertical;min-height:80px;line-height:1.5;}
+.fdiv{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;
+  color:var(--muted);padding:10px 0 4px;border-top:1px solid var(--border);margin-top:4px;grid-column:1/-1;}
+
+/* ── DETAIL PANEL ── */
+.dgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.di label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:3px;}
+.di p{font-size:13px;}
+.di.full{grid-column:1/-1;}
+.dnotes{background:var(--bg);border-radius:8px;padding:12px;font-size:13px;line-height:1.6;white-space:pre-wrap;}
+
+/* ── SECTION CARDS ── */
+.sec-title{
+  font-family:var(--display);font-size:20px;font-weight:700;
+  color:var(--navy);margin-bottom:6px;
+}
+.sec-sub{font-size:13px;color:var(--muted);margin-bottom:24px;}
+
+/* ── RESUME VAULT ── */
+.vault-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
+.vault-card{
+  background:var(--card);border:1px solid var(--border);border-radius:12px;
+  padding:20px;transition:all 0.15s;position:relative;overflow:hidden;
+}
+.vault-card:hover{box-shadow:0 4px 20px rgba(0,0,0,0.1);transform:translateY(-2px);}
+.vault-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--vc,var(--blue));}
+.vault-card h3{font-family:var(--display);font-size:14px;font-weight:700;color:var(--navy);margin-bottom:4px;}
+.vault-card p{font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.5;}
+.vault-meta{display:flex;align-items:center;justify-content:space-between;}
+.vault-actions{display:flex;gap:6px;}
+.file-chip{
+  font-size:11px;color:var(--muted);font-family:var(--mono);
+  background:var(--bg);border:1px solid var(--border);border-radius:4px;
+  padding:2px 6px;
+}
+
+/* ── DOCS SECTION ── */
+.app-docs-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:16px;
+}
+.docs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;}
+.doc-card{
+  background:var(--card);border:1px solid var(--border);border-radius:10px;
+  padding:16px;cursor:pointer;transition:all 0.15s;
+  display:flex;flex-direction:column;gap:8px;
+}
+.doc-card:hover{border-color:var(--blue);box-shadow:0 2px 12px rgba(26,74,138,0.1);}
+.doc-icon{font-size:28px;line-height:1;}
+.doc-name{font-size:13px;font-weight:600;color:var(--navy);word-break:break-word;}
+.doc-meta{font-size:11px;color:var(--muted);font-family:var(--mono);}
+.doc-actions{display:flex;gap:6px;margin-top:auto;}
+
+/* ── AI TOOLS ── */
+.ai-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.ai-card{
+  background:var(--card);border:1px solid var(--border);border-radius:14px;
+  padding:24px;
+}
+.ai-card h3{font-family:var(--display);font-size:16px;font-weight:700;color:var(--navy);margin-bottom:6px;display:flex;align-items:center;gap:8px;}
+.ai-card p{font-size:13px;color:var(--muted);margin-bottom:18px;line-height:1.6;}
+.ai-badge{
+  font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;
+  padding:2px 7px;border-radius:3px;background:linear-gradient(135deg,#667eea,#764ba2);
+  color:#fff;
+}
+.ai-result{
+  margin-top:16px;background:var(--bg);border-radius:10px;padding:16px;
+  font-size:13px;line-height:1.7;color:var(--text);white-space:pre-wrap;
+  border:1px solid var(--border);max-height:400px;overflow-y:auto;
+}
+.ai-loading{
+  display:flex;align-items:center;gap:10px;color:var(--muted);
+  font-size:13px;padding:16px;
+}
+.spinner{
+  width:18px;height:18px;border:2px solid var(--border);
+  border-top-color:var(--blue);border-radius:50%;
+  animation:spin 0.8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+.ai-result-actions{display:flex;gap:8px;margin-top:10px;}
+
+/* ── PROFILE MODAL ── */
+.profile-avatar-big{
+  width:64px;height:64px;border-radius:50%;background:var(--accent);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--display);font-weight:800;font-size:24px;color:var(--navy);
+  margin:0 auto 16px;
+}
+
+/* ── PROGRESS BAR ── */
+.progress-bar{
+  height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:6px;
+}
+.progress-fill{height:100%;background:var(--accent);border-radius:3px;transition:width 0.4s;}
+
+/* ── APP SELECTOR ── */
+.app-selector{
+  font-family:var(--body);font-size:13px;padding:8px 12px;
+  border:1px solid var(--border);border-radius:8px;width:100%;
+  background:var(--card);color:var(--text);outline:none;
+}
+.app-selector:focus{border-color:var(--blue);}
+
+/* ── TABS ── */
+.tabs{display:flex;gap:2px;background:var(--bg);border-radius:10px;padding:3px;margin-bottom:20px;}
+.tab{
+  flex:1;padding:7px 14px;border-radius:7px;font-size:13px;font-weight:500;
+  color:var(--muted);cursor:pointer;text-align:center;transition:all 0.15s;border:none;background:none;
+  font-family:var(--body);
+}
+.tab.active{background:var(--card);color:var(--navy);box-shadow:0 1px 6px rgba(0,0,0,0.1);}
+.tab-content{display:none;}
+.tab-content.active{display:block;}
+
+/* ── ALERTS ── */
+.alert{padding:12px 16px;border-radius:8px;font-size:13px;margin-bottom:14px;display:flex;align-items:flex-start;gap:8px;}
+.alert-info{background:#E5EEFF;color:var(--blue);border:1px solid #C0D0F8;}
+.alert-warn{background:#FFF3DB;color:#9A6000;border:1px solid #F0D080;}
+
+/* ── SECTION DIVIDER ── */
+.sdiv{height:1px;background:var(--border);margin:20px 0;}
+
+/* ── UPLOAD ZONE ── */
+.upload-zone{
+  border:2px dashed var(--border);border-radius:10px;padding:32px;
+  text-align:center;color:var(--muted);cursor:pointer;transition:all 0.15s;
+}
+.upload-zone:hover{border-color:var(--blue);background:#F5F8FF;color:var(--blue);}
+.upload-zone input{display:none;}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <h1>Job Search<br>Tracker</h1>
+    <div class="user-pill" onclick="openProfile()">
+      <div class="user-avatar" id="sidebarAvatar">A</div>
+      <div>
+        <div class="user-name" id="sidebarName">Athimoolam</div>
+        <div class="user-edit-hint">click to edit profile</div>
+      </div>
+    </div>
+  </div>
+  <nav class="nav">
+    <div class="nav-section-label">Main</div>
+    <div class="nav-item active" onclick="showPage('dashboard',this)">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      Dashboard
+    </div>
+    <div class="nav-item" onclick="showPage('applications',this)">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+      Applications
+    </div>
+    <div class="nav-item" onclick="showPage('docs',this)">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+      Documents
+    </div>
+    <div class="nav-section-label" style="margin-top:8px">Tools</div>
+    <div class="nav-item" onclick="showPage('vault',this)">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+      Resume Vault
+    </div>
+    <div class="nav-item" onclick="showPage('ai',this)">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 100 20 10 10 0 000-20z"/><path d="M12 16v-4M12 8h.01"/></svg>
+      AI Tools
+    </div>
+  </nav>
+  <div class="sidebar-footer">v2.0 · All data local</div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="topbarTitle">Dashboard</div>
+    <div class="topbar-actions">
+      <button class="btn btn-outline btn-sm" onclick="exportCSV()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        Export CSV
+      </button>
+      <button class="btn btn-primary btn-sm" onclick="openAppModal()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        Add Application
+      </button>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="page active" id="page-dashboard">
+    <div class="kpi-strip" id="kpiStrip"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;">
+        <div style="font-family:var(--display);font-size:14px;font-weight:700;color:var(--navy);margin-bottom:16px;">Recent Applications</div>
+        <div id="recentList"></div>
+      </div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;">
+        <div style="font-family:var(--display);font-size:14px;font-weight:700;color:var(--navy);margin-bottom:16px;">Pipeline Overview</div>
+        <div id="pipelineViz"></div>
+        <div class="sdiv"></div>
+        <div style="font-family:var(--display);font-size:14px;font-weight:700;color:var(--navy);margin-bottom:12px;">Follow-ups Due</div>
+        <div id="followupList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- APPLICATIONS -->
+  <div class="page" id="page-applications">
+    <div class="toolbar">
+      <div class="search-wrap">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" id="searchInput" placeholder="Search company or role…" oninput="renderTable()">
+      </div>
+      <select class="fsel" id="filterStatus" onchange="renderTable()">
+        <option value="">All Statuses</option>
+        <option>Saved</option><option>Applied</option><option>Interview</option>
+        <option>Offer</option><option>Rejected</option><option>Ghosted</option>
+      </select>
+      <select class="fsel" id="filterResume" onchange="renderTable()">
+        <option value="">All Versions</option>
+        <option>Engineering Manager Version</option><option>Project Manager Version</option>
+      </select>
+      <select class="fsel" id="filterRegion" onchange="renderTable()">
+        <option value="">All Regions</option>
+        <option>Sweden / Nordics</option><option>Europe (UK/DE/NL)</option>
+        <option>Remote / EU</option><option>Japan / Asia</option>
+      </select>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th onclick="sortBy('date')">Date</th>
+            <th onclick="sortBy('company')">Company</th>
+            <th>Role</th>
+            <th>Region</th>
+            <th>Status</th>
+            <th>Resume</th>
+            <th>LinkedIn</th>
+            <th>Interview</th>
+            <th>Salary</th>
+            <th>Notes</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+      <div id="emptyState" class="empty" style="display:none">
+        <h3>No applications yet</h3>
+        <p>Start tracking your first application</p>
+        <button class="btn btn-primary" onclick="openAppModal()">+ Add Application</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DOCUMENTS -->
+  <div class="page" id="page-docs">
+    <div class="sec-title">Documents</div>
+    <div class="sec-sub">Store cover letters, resumes, and notes per application. Files are stored in your browser.</div>
+    <div class="alert alert-info">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+      Documents are linked to each application. Select an application below to manage its files.
+    </div>
+    <div style="margin-bottom:16px;display:flex;align-items:center;gap:12px;">
+      <select class="app-selector" id="docAppSelector" onchange="renderDocs()" style="max-width:360px;">
+        <option value="">— Select an application —</option>
+      </select>
+      <button class="btn btn-primary btn-sm" id="addDocBtn" onclick="openDocUpload()" style="display:none">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        Add Document
+      </button>
+    </div>
+    <div id="docsArea"></div>
+  </div>
+
+  <!-- RESUME VAULT -->
+  <div class="page" id="page-vault">
+    <div class="sec-title">Resume Vault</div>
+    <div class="sec-sub">Store your EM and TPM/PM resume versions. Upload and manage them here.</div>
+    <div class="vault-grid" id="vaultGrid"></div>
+    <div style="margin-top:16px;">
+      <button class="btn btn-outline" onclick="openVaultUpload()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+        Upload Resume
+      </button>
+    </div>
+  </div>
+
+  <!-- AI TOOLS -->
+  <div class="page" id="page-ai">
+    <div class="sec-title">AI Tools</div>
+    <div class="sec-sub">Powered by Claude — generate cover letters and get resume feedback tailored to specific job descriptions.</div>
+    <div class="ai-grid">
+
+      <!-- COVER LETTER -->
+      <div class="ai-card">
+        <h3>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 4H4a2 2 0 00-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2z"/><path d="M22 6l-10 7L2 6"/></svg>
+          Cover Letter Generator
+          <span class="ai-badge">AI</span>
+        </h3>
+        <p>Paste a job description and generate a tailored cover letter based on your profile and experience.</p>
+        <div class="fg" style="margin-bottom:10px">
+          <label>Company Name</label>
+          <input class="fi" id="cl-company" placeholder="e.g. Ericsson">
+        </div>
+        <div class="fg" style="margin-bottom:10px">
+          <label>Job Title</label>
+          <input class="fi" id="cl-role" placeholder="e.g. Engineering Manager">
+        </div>
+        <div class="fg" style="margin-bottom:10px">
+          <label>Resume Version to Base On</label>
+          <select class="fi" id="cl-resume-ver">
+            <option value="EM">Engineering Manager Version</option>
+            <option value="TPM">Project Manager Version</option>
+          </select>
+        </div>
+        <div class="fg" style="margin-bottom:14px">
+          <label>Job Description *</label>
+          <textarea class="fi" id="cl-jd" rows="6" placeholder="Paste the full job description here…"></textarea>
+        </div>
+        <button class="btn btn-accent" onclick="generateCoverLetter()" id="cl-btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          Generate Cover Letter
+        </button>
+        <div id="cl-result"></div>
+      </div>
+
+      <!-- RESUME FEEDBACK -->
+      <div class="ai-card">
+        <h3>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+          Resume Feedback
+          <span class="ai-badge">AI</span>
+        </h3>
+        <p>Paste a job description and get specific, actionable suggestions on how to tailor your resume for that role.</p>
+        <div class="fg" style="margin-bottom:10px">
+          <label>Resume Version to Analyse</label>
+          <select class="fi" id="rf-resume-ver">
+            <option value="EM">Engineering Manager Version</option>
+            <option value="TPM">Project Manager Version</option>
+          </select>
+        </div>
+        <div class="fg" style="margin-bottom:10px">
+          <label>Target Role / Company (optional)</label>
+          <input class="fi" id="rf-role" placeholder="e.g. EM at Google, Stockholm">
+        </div>
+        <div class="fg" style="margin-bottom:14px">
+          <label>Job Description *</label>
+          <textarea class="fi" id="rf-jd" rows="8" placeholder="Paste the full job description here…"></textarea>
+        </div>
+        <button class="btn btn-primary" onclick="getResumeFeedback()" id="rf-btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          Analyse & Suggest
+        </button>
+        <div id="rf-result"></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- ═══════════════ MODALS ═══════════════ -->
+
+<!-- APPLICATION MODAL -->
+<div class="overlay" id="appOverlay" onclick="if(event.target.id==='appOverlay')closeAppModal()">
+<div class="modal">
+  <div class="mhd">
+    <h2 id="appModalTitle">New Application</h2>
+    <button class="mclose" onclick="closeAppModal()">×</button>
+  </div>
+  <div class="mbody">
+    <div class="fgrid">
+      <div class="fg"><label>Company *</label><input class="fi" id="f-company" placeholder="e.g. Ericsson"></div>
+      <div class="fg"><label>Job Title *</label><input class="fi" id="f-role" placeholder="e.g. Engineering Manager"></div>
+      <div class="fg"><label>Date Applied</label><input type="date" class="fi" id="f-date"></div>
+      <div class="fg"><label>Region</label>
+        <select class="fi" id="f-region">
+          <option value="">— select —</option>
+          <option>Sweden / Nordics</option><option>Europe (UK/DE/NL)</option>
+          <option>Remote / EU</option><option>Japan / Asia</option>
+        </select>
+      </div>
+      <div class="fg"><label>Status</label>
+        <select class="fi" id="f-status">
+          <option>Saved</option><option>Applied</option><option>Interview</option>
+          <option>Offer</option><option>Rejected</option><option>Ghosted</option>
+        </select>
+      </div>
+      <div class="fg"><label>Applied Via</label>
+        <select class="fi" id="f-via">
+          <option value="">— select —</option>
+          <option>Company Website</option><option>LinkedIn Easy Apply</option>
+          <option>Referral</option><option>Recruiter Reach-out</option><option>Other</option>
+        </select>
+      </div>
+      <div class="fdiv">Resume & Outreach</div>
+      <div class="fg"><label>Resume Version Sent</label>
+        <select class="fi" id="f-resume">
+          <option value="">— select —</option>
+          <option>Engineering Manager Version</option><option>Project Manager Version</option><option>Custom / Other</option>
+        </select>
+      </div>
+      <div class="fg"><label>Cover Letter / Message Used</label>
+        <select class="fi" id="f-coverletter">
+          <option value="">— none —</option>
+          <option>Recruiter After Applying</option><option>Hiring Manager Before Applying</option>
+          <option>Cold Outreach</option><option>Japan / Asia Template</option>
+          <option>AI Generated</option><option>Custom Written</option>
+        </select>
+      </div>
+      <div class="fg"><label>LinkedIn Outreach</label>
+        <select class="fi" id="f-linkedin">
+          <option value="">— none —</option>
+          <option>Sent — No Response</option><option>Sent — Replied</option><option>Connected</option>
+        </select>
+      </div>
+      <div class="fg"><label>Job Posting URL</label><input type="url" class="fi" id="f-url" placeholder="https://…"></div>
+      <div class="fdiv">Interview & Compensation</div>
+      <div class="fg"><label>Interview Stage</label>
+        <select class="fi" id="f-interview">
+          <option value="">— none yet —</option>
+          <option>Recruiter Screen</option><option>Hiring Manager Call</option>
+          <option>Technical Round</option><option>Panel Interview</option><option>Final Round</option>
+        </select>
+      </div>
+      <div class="fg"><label>Salary / Compensation (€)</label><input class="fi" id="f-salary" placeholder="e.g. 90 000–110 000"></div>
+      <div class="fg"><label>Follow-up Date</label><input type="date" class="fi" id="f-followup"></div>
+      <div class="fg"><label>Contact Name</label><input class="fi" id="f-contact" placeholder="Recruiter or HM name"></div>
+      <div class="fg full"><label>Notes</label><textarea class="fi" id="f-notes" rows="3" placeholder="Interview notes, feedback, action items…"></textarea></div>
+    </div>
+  </div>
+  <div class="mfooter">
+    <button class="btn btn-outline" onclick="closeAppModal()">Cancel</button>
+    <button class="btn btn-primary" onclick="saveApp()">Save Application</button>
+  </div>
+</div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="overlay" id="detailOverlay" onclick="if(event.target.id==='detailOverlay')closeDetail()">
+<div class="modal modal-lg">
+  <div class="mhd">
+    <h2 id="detailTitle">Application Details</h2>
+    <button class="mclose" onclick="closeDetail()">×</button>
+  </div>
+  <div class="mbody">
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('details',this)">Details</button>
+      <button class="tab" onclick="switchTab('detaildocs',this)">Documents</button>
+    </div>
+    <div class="tab-content active" id="tab-details">
+      <div id="detailBody"></div>
+    </div>
+    <div class="tab-content" id="tab-detaildocs">
+      <div id="detailDocsBody"></div>
+    </div>
+  </div>
+  <div class="mfooter">
+    <button class="btn btn-danger btn-sm" onclick="deleteFromDetail()">Delete</button>
+    <button class="btn btn-outline" onclick="closeDetail()">Close</button>
+    <button class="btn btn-primary" onclick="editFromDetail()">Edit</button>
+  </div>
+</div>
+</div>
+
+<!-- PROFILE MODAL -->
+<div class="overlay" id="profileOverlay" onclick="if(event.target.id==='profileOverlay')closeProfile()">
+<div class="modal modal-sm">
+  <div class="mhd">
+    <h2>Your Profile</h2>
+    <button class="mclose" onclick="closeProfile()">×</button>
+  </div>
+  <div class="mbody">
+    <div class="profile-avatar-big" id="profileAvatarBig">A</div>
+    <div class="fgrid">
+      <div class="fg full"><label>Your Name *</label><input class="fi" id="p-name" placeholder="e.g. Athimoolam Ealumalai"></div>
+      <div class="fg full"><label>Your Title</label><input class="fi" id="p-title" placeholder="e.g. Engineering Manager"></div>
+      <div class="fg full"><label>Location</label><input class="fi" id="p-location" placeholder="e.g. Malmö, Sweden"></div>
+      <div class="fg full"><label>Email</label><input class="fi" id="p-email" placeholder="your@email.com"></div>
+      <div class="fg full"><label>LinkedIn URL</label><input class="fi" id="p-linkedin" placeholder="linkedin.com/in/…"></div>
+    </div>
+    <div id="profileNamePreview" style="text-align:center;margin-top:8px;font-size:12px;color:var(--muted);"></div>
+  </div>
+  <div class="mfooter">
+    <button class="btn btn-outline" onclick="closeProfile()">Cancel</button>
+    <button class="btn btn-primary" onclick="saveProfile()">Save Profile</button>
+  </div>
+</div>
+</div>
+
+<!-- VAULT UPLOAD MODAL -->
+<div class="overlay" id="vaultOverlay" onclick="if(event.target.id==='vaultOverlay')closeVaultModal()">
+<div class="modal modal-sm">
+  <div class="mhd">
+    <h2>Upload Resume</h2>
+    <button class="mclose" onclick="closeVaultModal()">×</button>
+  </div>
+  <div class="mbody">
+    <div class="fgrid">
+      <div class="fg full"><label>Version Name *</label>
+        <select class="fi" id="v-type">
+          <option value="EM">Engineering Manager Version</option>
+          <option value="TPM">Project Manager Version</option>
+          <option value="Custom">Custom Version</option>
+        </select>
+      </div>
+      <div class="fg full"><label>Custom Label (optional)</label>
+        <input class="fi" id="v-label" placeholder="e.g. Google-tailored, Nov 2025">
+      </div>
+      <div class="fg full"><label>Notes</label>
+        <textarea class="fi" id="v-notes" rows="2" placeholder="What's different about this version…"></textarea>
+      </div>
+      <div class="fg full"><label>File</label>
+        <label class="upload-zone" for="v-file-input">
+          <div style="font-size:24px;margin-bottom:8px">📄</div>
+          <div style="font-size:13px;font-weight:500">Click to upload .docx or .pdf</div>
+          <div style="font-size:11px;margin-top:4px">or drag and drop</div>
+          <input type="file" id="v-file-input" accept=".pdf,.docx,.doc" onchange="previewVaultFile(this)">
+        </label>
+        <div id="v-file-preview" style="font-size:12px;color:var(--muted);margin-top:6px;"></div>
+      </div>
+    </div>
+  </div>
+  <div class="mfooter">
+    <button class="btn btn-outline" onclick="closeVaultModal()">Cancel</button>
+    <button class="btn btn-primary" onclick="saveVaultItem()">Save to Vault</button>
+  </div>
+</div>
+</div>
+
+<!-- DOC UPLOAD MODAL -->
+<div class="overlay" id="docOverlay" onclick="if(event.target.id==='docOverlay')closeDocModal()">
+<div class="modal modal-sm">
+  <div class="mhd">
+    <h2>Add Document</h2>
+    <button class="mclose" onclick="closeDocModal()">×</button>
+  </div>
+  <div class="mbody">
+    <div class="fgrid">
+      <div class="fg full"><label>Document Type</label>
+        <select class="fi" id="d-type">
+          <option>Cover Letter</option><option>Resume (tailored)</option>
+          <option>Interview Notes</option><option>Job Description</option>
+          <option>Offer Letter</option><option>Other</option>
+        </select>
+      </div>
+      <div class="fg full"><label>Label / Name</label>
+        <input class="fi" id="d-label" placeholder="e.g. Cover Letter v2, 12 Jan">
+      </div>
+      <div class="fg full"><label>Notes</label>
+        <textarea class="fi" id="d-notes" rows="2" placeholder="Any context or notes…"></textarea>
+      </div>
+      <div class="fg full"><label>File (optional)</label>
+        <label class="upload-zone" for="d-file-input">
+          <div style="font-size:20px;margin-bottom:6px">📎</div>
+          <div style="font-size:13px;font-weight:500">Click to attach file</div>
+          <input type="file" id="d-file-input" accept=".pdf,.docx,.doc,.txt,.png,.jpg" onchange="previewDocFile(this)">
+        </label>
+        <div id="d-file-preview" style="font-size:12px;color:var(--muted);margin-top:6px;"></div>
+      </div>
+    </div>
+  </div>
+  <div class="mfooter">
+    <button class="btn btn-outline" onclick="closeDocModal()">Cancel</button>
+    <button class="btn btn-primary" onclick="saveDoc()">Save Document</button>
+  </div>
+</div>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────────────────────────────
+let apps=[], vault=[], docs=[], profile={};
+let editingId=null, detailId=null, sortField='date', sortAsc=false;
+
+// ── Storage ───────────────────────────────────────────────────────────────────
+function save(){
+  try{
+    localStorage.setItem('jst_apps', JSON.stringify(apps));
+    localStorage.setItem('jst_vault', JSON.stringify(vault));
+    localStorage.setItem('jst_docs', JSON.stringify(docs));
+    localStorage.setItem('jst_profile', JSON.stringify(profile));
+  }catch(e){}
+}
+function load(){
+  try{
+    apps    = JSON.parse(localStorage.getItem('jst_apps')||'[]');
+    vault   = JSON.parse(localStorage.getItem('jst_vault')||'[]');
+    docs    = JSON.parse(localStorage.getItem('jst_docs')||'[]');
+    profile = JSON.parse(localStorage.getItem('jst_profile')||'{"name":"Athimoolam","title":"Engineering Manager","location":"Malmö, Sweden"}');
+  }catch(e){ apps=[]; vault=[]; docs=[]; profile={name:'Athimoolam'}; }
+}
+
+// ── Navigation ────────────────────────────────────────────────────────────────
+const PAGE_TITLES={
+  dashboard:'Dashboard',applications:'Applications',
+  docs:'Documents',vault:'Resume Vault',ai:'AI Tools'
+};
+function showPage(id, el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  if(el) el.classList.add('active');
+  document.getElementById('topbarTitle').textContent = PAGE_TITLES[id]||id;
+  if(id==='dashboard') renderDashboard();
+  if(id==='applications') renderTable();
+  if(id==='docs') renderDocPage();
+  if(id==='vault') renderVault();
+}
+
+// ── Profile ───────────────────────────────────────────────────────────────────
+function applyProfile(){
+  const n = profile.name||'User';
+  const initials = n.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  document.getElementById('sidebarAvatar').textContent = initials;
+  document.getElementById('sidebarName').textContent   = n.split(' ')[0];
+}
+function openProfile(){
+  document.getElementById('p-name').value     = profile.name||'';
+  document.getElementById('p-title').value    = profile.title||'';
+  document.getElementById('p-location').value = profile.location||'';
+  document.getElementById('p-email').value    = profile.email||'';
+  document.getElementById('p-linkedin').value = profile.linkedin||'';
+  const n=profile.name||'';
+  const initials=n.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  document.getElementById('profileAvatarBig').textContent=initials||'?';
+  document.getElementById('profileOverlay').classList.add('open');
+}
+function closeProfile(){ document.getElementById('profileOverlay').classList.remove('open'); }
+function saveProfile(){
+  profile={
+    name:    document.getElementById('p-name').value.trim(),
+    title:   document.getElementById('p-title').value.trim(),
+    location:document.getElementById('p-location').value.trim(),
+    email:   document.getElementById('p-email').value.trim(),
+    linkedin:document.getElementById('p-linkedin').value.trim(),
+  };
+  save(); applyProfile(); closeProfile();
+}
+
+// ── KPIs & Dashboard ──────────────────────────────────────────────────────────
+function renderKPIs(){
+  const tot = apps.length;
+  const app = apps.filter(a=>['Applied','Interview','Offer','Rejected','Ghosted'].includes(a.status)).length;
+  const iv  = apps.filter(a=>a.status==='Interview').length;
+  const off = apps.filter(a=>a.status==='Offer').length;
+  const rej = apps.filter(a=>a.status==='Rejected').length;
+  const rt  = app>0?Math.round((iv/app)*100):0;
+  const kpis=[
+    {l:'Total',n:tot,c:'#1A4A8A'},{l:'Applied',n:app,c:'#1A4A8A'},
+    {l:'Interviews',n:iv,c:'#9A6000'},{l:'Offers',n:off,c:'#0E6E45'},
+    {l:'Rejected',n:rej,c:'#A82828'},{l:'Response %',n:rt+'%',c:'#4A2A7A'}
+  ];
+  document.getElementById('kpiStrip').innerHTML=kpis.map(k=>`
+    <div class="kpi" style="--kc:${k.c}">
+      <div class="kpi-num">${k.n}</div>
+      <div class="kpi-label">${k.l}</div>
+    </div>`).join('');
+}
+function renderDashboard(){
+  renderKPIs();
+  // Recent
+  const recent = [...apps].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).slice(0,5);
+  document.getElementById('recentList').innerHTML = recent.length
+    ? recent.map(a=>`
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">
+        <div>
+          <div style="font-weight:600;font-size:13px;color:var(--navy)">${esc(a.company)}</div>
+          <div style="font-size:12px;color:var(--muted)">${esc(a.role)}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="c-dt">${fmtDate(a.date)}</span>
+          ${statusBadge(a.status)}
+        </div>
+      </div>`).join('')
+    : '<div style="color:var(--muted);font-size:13px;padding:16px 0;text-align:center">No applications yet</div>';
+
+  // Pipeline bars
+  const statuses=['Saved','Applied','Interview','Offer','Rejected','Ghosted'];
+  const max = Math.max(...statuses.map(s=>apps.filter(a=>a.status===s).length),1);
+  document.getElementById('pipelineViz').innerHTML = statuses.map(s=>{
+    const cnt = apps.filter(a=>a.status===s).length;
+    const pct = Math.round((cnt/max)*100);
+    return `
+      <div style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+          <span style="color:var(--muted);font-weight:500">${s}</span>
+          <span style="font-family:var(--mono);color:var(--navy)">${cnt}</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${statusColor(s)}"></div></div>
+      </div>`;
+  }).join('');
+
+  // Follow-ups
+  const today = new Date().toISOString().split('T')[0];
+  const due = apps.filter(a=>a.followup && a.followup<=today && !['Rejected','Offer'].includes(a.status))
+    .sort((a,b)=>a.followup.localeCompare(b.followup)).slice(0,5);
+  document.getElementById('followupList').innerHTML = due.length
+    ? due.map(a=>`
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);">
+        <div>
+          <div style="font-weight:600;font-size:13px;color:var(--navy)">${esc(a.company)}</div>
+          <div style="font-size:12px;color:var(--muted)">${esc(a.role)}</div>
+        </div>
+        <span style="font-family:var(--mono);font-size:11px;color:${a.followup<today?'var(--red)':'#9A6000'};background:${a.followup<today?'#FEECEC':'#FFF3DB'};padding:2px 7px;border-radius:4px">${fmtDate(a.followup)}</span>
+      </div>`).join('')
+    : '<div style="color:var(--muted);font-size:13px;padding:8px 0">No follow-ups due</div>';
+}
+
+// ── Table ─────────────────────────────────────────────────────────────────────
+function getFiltered(){
+  const q=document.getElementById('searchInput').value.toLowerCase();
+  const st=document.getElementById('filterStatus').value;
+  const rv=document.getElementById('filterResume').value;
+  const rg=document.getElementById('filterRegion').value;
+  return apps.filter(a=>{
+    if(q&&!`${a.company} ${a.role}`.toLowerCase().includes(q)) return false;
+    if(st&&a.status!==st) return false;
+    if(rv&&a.resume!==rv) return false;
+    if(rg&&a.region!==rg) return false;
+    return true;
+  }).sort((a,b)=>{
+    let va=a[sortField]||'',vb=b[sortField]||'';
+    return sortAsc?va.localeCompare(vb):vb.localeCompare(va);
+  });
+}
+function renderTable(){
+  renderKPIs();
+  const rows=getFiltered();
+  const tbody=document.getElementById('tableBody');
+  const empty=document.getElementById('emptyState');
+  if(!rows.length){tbody.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  tbody.innerHTML=rows.map(a=>`
+    <tr onclick="openDetail('${a.id}')">
+      <td class="c-dt">${fmtDate(a.date)}</td>
+      <td class="c-co">${esc(a.company)}</td>
+      <td>${esc(a.role)}</td>
+      <td style="font-size:12px;color:var(--muted)">${a.region||'—'}</td>
+      <td>${statusBadge(a.status)}</td>
+      <td>${resumeTag(a.resume)}</td>
+      <td>${linkedinBadge(a.linkedin)}</td>
+      <td style="font-size:12px;color:var(--muted)">${a.interview||'—'}</td>
+      <td>${a.salary?`<span class="sal-chip">${esc(a.salary)}</span>`:'—'}</td>
+      <td class="c-nt">${esc(a.notes||'')}</td>
+      <td onclick="event.stopPropagation()">
+        <div style="display:flex;gap:5px">
+          <button class="btn btn-outline btn-sm" onclick="openEdit('${a.id}')">Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteApp('${a.id}')">✕</button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+function sortBy(f){if(sortField===f)sortAsc=!sortAsc;else{sortField=f;sortAsc=true;}renderTable();}
+
+// ── Detail ────────────────────────────────────────────────────────────────────
+function openDetail(id){
+  const a=apps.find(x=>x.id===id);if(!a)return;
+  detailId=id;
+  document.getElementById('detailTitle').textContent=`${a.company} — ${a.role}`;
+  document.getElementById('detailBody').innerHTML=`
+    <div class="dgrid">
+      <div class="di"><label>Status</label><p>${statusBadge(a.status)}</p></div>
+      <div class="di"><label>Date Applied</label><p>${fmtDate(a.date)||'—'}</p></div>
+      <div class="di"><label>Region</label><p>${a.region||'—'}</p></div>
+      <div class="di"><label>Applied Via</label><p>${a.via||'—'}</p></div>
+      <div class="di"><label>Resume Version</label><p>${resumeTag(a.resume)}</p></div>
+      <div class="di"><label>Cover Letter / Message</label><p style="font-size:13px">${esc(a.coverletter||'—')}</p></div>
+      <div class="di"><label>LinkedIn Outreach</label><p>${linkedinBadge(a.linkedin)}</p></div>
+      <div class="di"><label>Contact</label><p>${esc(a.contact||'—')}</p></div>
+      <div class="di"><label>Interview Stage</label><p>${a.interview||'—'}</p></div>
+      <div class="di"><label>Follow-up Date</label><p style="color:${a.followup&&a.followup<today()?'var(--red)':'inherit'}">${fmtDate(a.followup)||'—'}</p></div>
+      <div class="di"><label>Salary</label><p>${a.salary?`<span class="sal-chip">${esc(a.salary)}</span>`:'—'}</p></div>
+      <div class="di"><label>Job URL</label><p>${a.url?`<a href="${esc(a.url)}" target="_blank" style="color:var(--blue);font-size:12px">Open ↗</a>`:'—'}</p></div>
+      ${a.notes?`<div class="di full"><label>Notes</label><div class="dnotes">${esc(a.notes)}</div></div>`:''}
+    </div>`;
+  // Docs tab
+  const appDocs = docs.filter(d=>d.appId===id);
+  document.getElementById('detailDocsBody').innerHTML=`
+    <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+      <button class="btn btn-primary btn-sm" onclick="openDocUploadFor('${id}')">+ Add Document</button>
+    </div>
+    ${appDocs.length?`<div class="docs-grid">${appDocs.map(docCard).join('')}</div>`
+      :`<div class="empty" style="padding:32px"><p>No documents yet for this application</p></div>`}`;
+  // reset tabs
+  document.querySelectorAll('.tab').forEach((t,i)=>{t.classList.toggle('active',i===0);});
+  document.querySelectorAll('.tab-content').forEach((t,i)=>{t.classList.toggle('active',i===0);});
+  document.getElementById('detailOverlay').classList.add('open');
+}
+function closeDetail(){document.getElementById('detailOverlay').classList.remove('open');detailId=null;}
+function editFromDetail(){const id=detailId;closeDetail();openEdit(id);}
+function deleteFromDetail(){if(detailId){deleteApp(detailId);closeDetail();}}
+function switchTab(id,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-'+id).classList.add('active');
+}
+
+// ── App Modal ─────────────────────────────────────────────────────────────────
+function openAppModal(){
+  editingId=null;
+  document.getElementById('appModalTitle').textContent='New Application';
+  const fields=['company','role','region','status','via','resume','coverletter','linkedin','url','interview','salary','contact','notes','followup'];
+  fields.forEach(f=>{ const el=document.getElementById('f-'+f); if(el) el.value=f==='status'?'Applied':''; });
+  document.getElementById('f-date').value=today();
+  document.getElementById('appOverlay').classList.add('open');
+  document.getElementById('f-company').focus();
+}
+function openEdit(id){
+  const a=apps.find(x=>x.id===id);if(!a)return;
+  editingId=id;
+  document.getElementById('appModalTitle').textContent='Edit Application';
+  ['company','role','date','region','status','via','resume','coverletter','linkedin','url','interview','salary','followup','contact','notes']
+    .forEach(f=>{const el=document.getElementById('f-'+f);if(el)el.value=a[f]||'';});
+  document.getElementById('appOverlay').classList.add('open');
+}
+function closeAppModal(){document.getElementById('appOverlay').classList.remove('open');editingId=null;}
+function saveApp(){
+  const company=document.getElementById('f-company').value.trim();
+  const role   =document.getElementById('f-role').value.trim();
+  if(!company||!role){alert('Company and Job Title are required.');return;}
+  const data={
+    company,role,
+    date:       document.getElementById('f-date').value,
+    region:     document.getElementById('f-region').value,
+    status:     document.getElementById('f-status').value,
+    via:        document.getElementById('f-via').value,
+    resume:     document.getElementById('f-resume').value,
+    coverletter:document.getElementById('f-coverletter').value,
+    linkedin:   document.getElementById('f-linkedin').value,
+    url:        document.getElementById('f-url').value,
+    interview:  document.getElementById('f-interview').value,
+    salary:     document.getElementById('f-salary').value,
+    followup:   document.getElementById('f-followup').value,
+    contact:    document.getElementById('f-contact').value,
+    notes:      document.getElementById('f-notes').value,
+  };
+  if(editingId){
+    const i=apps.findIndex(a=>a.id===editingId);
+    if(i>-1)apps[i]={...apps[i],...data};
+  }else{
+    data.id='app_'+Date.now();data.createdAt=new Date().toISOString();
+    apps.unshift(data);
+  }
+  save();closeAppModal();renderTable();
+  // update doc selector
+  populateDocSelector();
+}
+function deleteApp(id){
+  if(!confirm('Delete this application and all its documents?'))return;
+  apps=apps.filter(a=>a.id!==id);
+  docs=docs.filter(d=>d.appId!==id);
+  save();renderTable();renderDashboard();
+}
+
+// ── Vault ─────────────────────────────────────────────────────────────────────
+const VAULT_COLORS={EM:'#1A4A8A',TPM:'#9A6000',Custom:'#0A6E6E'};
+function renderVault(){
+  const defaults=[
+    {id:'v-em',type:'EM',label:'EM Version',notes:'Engineering Manager focus — leads with people leadership, hiring, org design, Android Connectivity.',file:null,isDefault:true},
+    {id:'v-tpm',type:'TPM',label:'TPM / PM Version',notes:'Delivery Manager focus — leads with program execution, roadmap, SOW, stakeholder alignment.',file:null,isDefault:true},
+  ];
+  const allItems=[...defaults.filter(d=>!vault.find(v=>v.type===d.type)), ...vault];
+  document.getElementById('vaultGrid').innerHTML=allItems.map(v=>`
+    <div class="vault-card" style="--vc:${VAULT_COLORS[v.type]||'#1A4A8A'}">
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:${VAULT_COLORS[v.type]||'#1A4A8A'};margin-bottom:6px">${v.type} Version</div>
+      <h3>${esc(v.label||v.type)}</h3>
+      <p>${esc(v.notes||'')}</p>
+      <div class="vault-meta">
+        <span class="file-chip">${v.file?v.file.name:'No file uploaded'}</span>
+        <div class="vault-actions">
+          ${v.file?`<button class="btn btn-outline btn-sm" onclick="downloadVaultFile('${v.id}')">↓ Download</button>`:''}
+          ${!v.isDefault?`<button class="btn btn-danger btn-sm" onclick="deleteVaultItem('${v.id}')">✕</button>`:''}
+          <button class="btn btn-outline btn-sm" onclick="openVaultUploadFor('${v.type}')">Upload</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+let vaultFileData=null;
+function previewVaultFile(input){
+  const f=input.files[0];
+  if(!f)return;
+  const reader=new FileReader();
+  reader.onload=e=>{ vaultFileData={name:f.name,data:e.target.result,size:f.size,type:f.type}; };
+  reader.readAsDataURL(f);
+  document.getElementById('v-file-preview').textContent='📎 '+f.name+' ('+Math.round(f.size/1024)+'KB)';
+}
+function openVaultUpload(){document.getElementById('vaultOverlay').classList.add('open');}
+function openVaultUploadFor(type){
+  document.getElementById('v-type').value=type;
+  openVaultUpload();
+}
+function closeVaultModal(){document.getElementById('vaultOverlay').classList.remove('open');vaultFileData=null;document.getElementById('v-file-preview').textContent='';}
+function saveVaultItem(){
+  const type=document.getElementById('v-type').value;
+  const label=document.getElementById('v-label').value.trim();
+  const notes=document.getElementById('v-notes').value.trim();
+  // Remove existing of same type
+  vault=vault.filter(v=>v.type!==type);
+  vault.push({id:'v_'+Date.now(),type,label:label||(type+' Version'),notes,file:vaultFileData,createdAt:new Date().toISOString()});
+  save();closeVaultModal();renderVault();
+}
+function downloadVaultFile(id){
+  const v=vault.find(x=>x.id===id);
+  if(!v||!v.file)return;
+  const a=document.createElement('a');a.href=v.file.data;a.download=v.file.name;a.click();
+}
+function deleteVaultItem(id){
+  if(!confirm('Remove this resume from vault?'))return;
+  vault=vault.filter(v=>v.id!==id);save();renderVault();
+}
+
+// ── Documents ─────────────────────────────────────────────────────────────────
+let docFileData=null, docTargetAppId=null;
+function populateDocSelector(){
+  const sel=document.getElementById('docAppSelector');
+  const cur=sel.value;
+  sel.innerHTML='<option value="">— Select an application —</option>';
+  apps.forEach(a=>{
+    const opt=document.createElement('option');
+    opt.value=a.id;opt.textContent=`${a.company} — ${a.role}`;
+    sel.appendChild(opt);
+  });
+  if(cur)sel.value=cur;
+}
+function renderDocPage(){
+  populateDocSelector();
+  renderDocs();
+}
+function renderDocs(){
+  const appId=document.getElementById('docAppSelector').value;
+  const btn=document.getElementById('addDocBtn');
+  btn.style.display=appId?'flex':'none';
+  if(!appId){
+    document.getElementById('docsArea').innerHTML=`<div class="empty"><p>Select an application to see its documents</p></div>`;
+    return;
+  }
+  const appDocs=docs.filter(d=>d.appId===appId);
+  document.getElementById('docsArea').innerHTML=appDocs.length
+    ?`<div class="docs-grid">${appDocs.map(docCard).join('')}</div>`
+    :`<div class="empty" style="padding:40px"><h3>No documents yet</h3><p>Add cover letters, notes, or tailored resumes for this application</p></div>`;
+}
+function docCard(d){
+  const icons={
+    'Cover Letter':'📝','Resume (tailored)':'📄','Interview Notes':'🗒️',
+    'Job Description':'🔗','Offer Letter':'🎉','Other':'📎'
+  };
+  return `
+    <div class="doc-card">
+      <div class="doc-icon">${icons[d.type]||'📎'}</div>
+      <div>
+        <div class="doc-name">${esc(d.label||d.type)}</div>
+        <div class="doc-meta">${d.type} · ${fmtDate(d.createdAt?.split('T')[0])}</div>
+        ${d.notes?`<div style="font-size:11px;color:var(--muted);margin-top:4px">${esc(d.notes)}</div>`:''}
+      </div>
+      <div class="doc-actions">
+        ${d.file?`<button class="btn btn-outline btn-sm" onclick="downloadDoc('${d.id}')">↓</button>`:''}
+        <button class="btn btn-danger btn-sm" onclick="deleteDoc('${d.id}')">✕</button>
+      </div>
+    </div>`;
+}
+function previewDocFile(input){
+  const f=input.files[0];if(!f)return;
+  const reader=new FileReader();
+  reader.onload=e=>{docFileData={name:f.name,data:e.target.result,size:f.size,type:f.type};};
+  reader.readAsDataURL(f);
+  document.getElementById('d-file-preview').textContent='📎 '+f.name+' ('+Math.round(f.size/1024)+'KB)';
+}
+function openDocUpload(){
+  docTargetAppId=document.getElementById('docAppSelector').value;
+  if(!docTargetAppId)return;
+  docFileData=null;
+  document.getElementById('d-type').value='Cover Letter';
+  document.getElementById('d-label').value='';
+  document.getElementById('d-notes').value='';
+  document.getElementById('d-file-preview').textContent='';
+  document.getElementById('docOverlay').classList.add('open');
+}
+function openDocUploadFor(appId){
+  docTargetAppId=appId;
+  docFileData=null;
+  document.getElementById('d-type').value='Cover Letter';
+  document.getElementById('d-label').value='';
+  document.getElementById('d-notes').value='';
+  document.getElementById('d-file-preview').textContent='';
+  document.getElementById('docOverlay').classList.add('open');
+}
+function closeDocModal(){document.getElementById('docOverlay').classList.remove('open');docFileData=null;}
+function saveDoc(){
+  const type =document.getElementById('d-type').value;
+  const label=document.getElementById('d-label').value.trim();
+  const notes=document.getElementById('d-notes').value.trim();
+  docs.push({
+    id:'doc_'+Date.now(),appId:docTargetAppId,
+    type,label:label||type,notes,file:docFileData,
+    createdAt:new Date().toISOString()
+  });
+  save();closeDocModal();renderDocs();
+  // refresh detail modal docs tab if open
+  if(detailId===docTargetAppId) openDetail(detailId);
+}
+function downloadDoc(id){
+  const d=docs.find(x=>x.id===id);if(!d||!d.file)return;
+  const a=document.createElement('a');a.href=d.file.data;a.download=d.file.name;a.click();
+}
+function deleteDoc(id){
+  if(!confirm('Delete this document?'))return;
+  docs=docs.filter(d=>d.id!==id);save();renderDocs();
+}
+
+// ── AI Tools ──────────────────────────────────────────────────────────────────
+const EM_SUMMARY  = `Engineering Manager with 20+ years building global engineering organizations in Android Connectivity and Telecom. Led 7 in-house + 50+ offshore engineers. Hiring, team growth, performance management, ways of working. Deep technical expertise in Android Telephony, WLAN, BT, GPS, LTE/5G/D2C. Development Lead for Android Direct-to-Cell satellite communication (JP operators). Sony Europe / Sony Mobile Communications, Lund, Sweden. Swedish citizen, EU mobility.`;
+const TPM_SUMMARY = `Technical Program Manager and Delivery Manager with 20+ years driving large-scale Android Connectivity and Telecom programs across Europe, Japan, Asia. Multi-site program delivery, roadmap planning, SOW negotiation, vendor management, budgeting. Led Direct-to-Cell satellite D2C feature end-to-end for JP operators. Stakeholder alignment across product, platform, operators, QA. Agile/Scrum/SAFe. Sony Europe / Sony Mobile, Lund, Sweden. Swedish citizen, EU mobility.`;
+
+async function callClaude(prompt){
+  const resp = await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      model:'claude-sonnet-4-20250514',
+      max_tokens:1000,
+      messages:[{role:'user',content:prompt}]
+    })
+  });
+  const data=await resp.json();
+  if(!resp.ok) throw new Error(data.error?.message||'API error');
+  return data.content.map(c=>c.text||'').join('');
+}
+
+async function generateCoverLetter(){
+  const jd      = document.getElementById('cl-jd').value.trim();
+  const company = document.getElementById('cl-company').value.trim();
+  const role    = document.getElementById('cl-role').value.trim();
+  const ver     = document.getElementById('cl-resume-ver').value;
+  if(!jd){alert('Please paste a job description first.');return;}
+  const summary = ver==='EM'?EM_SUMMARY:TPM_SUMMARY;
+  const name    = profile.name||'Athimoolam Ealumalai';
+  const prompt  = `You are a professional cover letter writer. Write a compelling, concise cover letter (3–4 paragraphs, under 350 words) for the following.
+
+Candidate: ${name}
+Background: ${summary}
+Target Company: ${company||'[Company]'}
+Target Role: ${role||'[Role]'}
+
+Job Description:
+${jd}
+
+Instructions:
+- Open with a strong hook that references something specific about the company or role
+- Highlight 2–3 most relevant experiences from the candidate's background
+- Reference the D2C satellite work and global team management where relevant
+- Close with a confident call to action
+- Tone: professional, direct, confident — not generic or overly formal
+- Do NOT use phrases like "I am writing to" or "I believe I am a strong candidate"
+- Format: plain text paragraphs, no bullet points`;
+
+  const btn=document.getElementById('cl-btn');
+  btn.disabled=true;
+  document.getElementById('cl-result').innerHTML=`<div class="ai-loading"><div class="spinner"></div>Generating cover letter…</div>`;
+  try{
+    const text=await callClaude(prompt);
+    document.getElementById('cl-result').innerHTML=`
+      <div class="ai-result">${esc(text)}</div>
+      <div class="ai-result-actions">
+        <button class="btn btn-outline btn-sm" onclick="copyText('cl-result')">📋 Copy</button>
+        <button class="btn btn-green btn-sm" onclick="saveAIDoc('cl-result','Cover Letter','${esc(company)} — ${esc(role)}')">💾 Save to Documents</button>
+      </div>`;
+  }catch(e){
+    document.getElementById('cl-result').innerHTML=`<div class="alert alert-warn">⚠️ ${esc(e.message)}</div>`;
+  }
+  btn.disabled=false;
+}
+
+async function getResumeFeedback(){
+  const jd  = document.getElementById('rf-jd').value.trim();
+  const role= document.getElementById('rf-role').value.trim();
+  const ver = document.getElementById('rf-resume-ver').value;
+  if(!jd){alert('Please paste a job description first.');return;}
+  const summary = ver==='EM'?EM_SUMMARY:TPM_SUMMARY;
+  const prompt  = `You are a senior recruiter and resume coach specialising in engineering leadership roles in Europe.
+
+Candidate's resume profile (${ver==='EM'?'EM Version':'TPM/PM Version'}):
+${summary}
+
+Target role: ${role||'not specified'}
+
+Job Description:
+${jd}
+
+Provide specific, actionable feedback in these sections:
+1. **Match Score** — brief % match and 1-sentence verdict
+2. **Strong Matches** — 3–4 things in their background that directly match this JD (be specific)
+3. **Gaps / Weaknesses** — 2–3 honest gaps between their profile and the JD requirements
+4. **Bullet Rewrites** — suggest 2–3 specific resume bullet rewrites that better match keywords in this JD
+5. **Keywords to Add** — list 5–8 keywords from the JD missing from their profile
+6. **Application Recommendation** — should they apply, how to position, one key message to lead with
+
+Be direct and honest. No fluff.`;
+
+  const btn=document.getElementById('rf-btn');
+  btn.disabled=true;
+  document.getElementById('rf-result').innerHTML=`<div class="ai-loading"><div class="spinner"></div>Analysing resume against job description…</div>`;
+  try{
+    const text=await callClaude(prompt);
+    document.getElementById('rf-result').innerHTML=`
+      <div class="ai-result">${esc(text)}</div>
+      <div class="ai-result-actions">
+        <button class="btn btn-outline btn-sm" onclick="copyText('rf-result')">📋 Copy</button>
+      </div>`;
+  }catch(e){
+    document.getElementById('rf-result').innerHTML=`<div class="alert alert-warn">⚠️ ${esc(e.message)}</div>`;
+  }
+  btn.disabled=false;
+}
+
+function copyText(containerId){
+  const el=document.querySelector('#'+containerId+' .ai-result');
+  if(!el)return;
+  navigator.clipboard.writeText(el.textContent).then(()=>{
+    const btn=document.querySelector('#'+containerId+' .ai-result-actions .btn');
+    if(btn){const orig=btn.textContent;btn.textContent='✓ Copied!';setTimeout(()=>btn.textContent=orig,2000);}
+  });
+}
+
+function saveAIDoc(containerId,type,label){
+  const el=document.querySelector('#'+containerId+' .ai-result');
+  if(!el)return;
+  // Ask which app to attach to
+  const appId=prompt('Enter the application to attach this to (or leave blank for general):\n'+
+    apps.slice(0,10).map((a,i)=>`${i+1}. ${a.company} — ${a.role}`).join('\n')+
+    '\n\nType the number:');
+  const idx=parseInt(appId)-1;
+  const targetApp=apps[idx];
+  const blob=new Blob([el.textContent],{type:'text/plain'});
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const fname=`${type.replace(' ','_')}_${(label||'').replace(/[^a-z0-9]/gi,'_')}.txt`;
+    docs.push({
+      id:'doc_'+Date.now(),
+      appId:targetApp?targetApp.id:'general',
+      type,label:label||type,
+      notes:'Generated by AI Tools',
+      file:{name:fname,data:e.target.result,size:blob.size,type:'text/plain'},
+      createdAt:new Date().toISOString()
+    });
+    save();
+    alert('Saved to Documents'+(targetApp?` for ${targetApp.company}`:'')+'!');
+  };
+  reader.readAsDataURL(blob);
+}
+
+// ── Export ────────────────────────────────────────────────────────────────────
+function exportCSV(){
+  const h=['Date','Company','Role','Region','Status','Via','Resume','Cover Letter','LinkedIn','Interview','Salary','Follow-up','Contact','URL','Notes'];
+  const rows=apps.map(a=>[a.date,a.company,a.role,a.region,a.status,a.via,a.resume,a.coverletter,a.linkedin,a.interview,a.salary,a.followup,a.contact,a.url,(a.notes||'').replace(/\n/g,' ')].map(v=>`"${(v||'').replace(/"/g,'""')}"`).join(','));
+  const csv=[h.join(','),...rows].join('\n');
+  const blob=new Blob([csv],{type:'text/csv'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='job_applications.csv';a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function today(){return new Date().toISOString().split('T')[0];}
+function fmtDate(d){
+  if(!d)return'';
+  const [y,m,day]=d.split('-');
+  const mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${parseInt(day)} ${mo[parseInt(m)-1]} ${y}`;
+}
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function statusColor(s){
+  return{Saved:'#3A4A6A',Applied:'#1A4A8A',Interview:'#9A6000',Offer:'#0E6E45',Rejected:'#A82828',Ghosted:'#4A2A7A'}[s]||'#3A4A6A';
+}
+function statusBadge(s){
+  const cls={Saved:'b-saved',Applied:'b-applied',Interview:'b-interview',Offer:'b-offer',Rejected:'b-rejected',Ghosted:'b-ghosted'};
+  return`<span class="badge ${cls[s]||'b-saved'}">${s||'—'}</span>`;
+}
+function resumeTag(r){
+  if(!r)return'—';
+  if(r==='Engineering Manager Version')return`<span class="rtag rtag-em">EM</span>`;
+  if(r==='Project Manager Version')return`<span class="rtag rtag-tpm">TPM/PM</span>`;
+  return`<span class="rtag rtag-cu">Custom</span>`;
+}
+function linkedinBadge(l){
+  if(!l)return'<span class="li-chip li-none">—</span>';
+  if(l.includes('Replied'))return`<span class="li-chip li-rep">✓ Replied</span>`;
+  if(l.includes('Sent'))return`<span class="li-chip li-sent">Sent</span>`;
+  return`<span class="li-chip li-sent">${l}</span>`;
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+load();
+applyProfile();
+renderDashboard();
+renderVault();
+</script>
+</body>
+</html>
